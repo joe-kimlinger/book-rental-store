@@ -18,7 +18,7 @@ class Book(models.Model):
 
     def days_remaining(self):
         delta = self.rental_due_date - timezone.now()
-        return delta.days
+        return max(delta.days, 0)
 
     def rental_charge(self):
         return self.days_rented * self.rental_rate
