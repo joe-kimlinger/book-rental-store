@@ -3,6 +3,9 @@
 {% block title %}Home{% endblock title %}
 
 {% block content %}
+
+<form action="{% url 'rent' object.id %}" method="post">
+    {% csrf_token %}
     <div class="row">
         <h2>{{object.title}}</h2>
     </div>
@@ -12,21 +15,31 @@
     <div class="row">
         <p>Rental charge per day: ${{object.rental_rate}}
     </div>
-    {% if user_id == object.renting_user_id %}
-        {% if object.past_due %}
-            <div class="row">
-                <p>Returned on {{ object.rental_due_date }}</p>
-            </div>
-            <div class="row">
-                <p>Returned on {{ object.rental_due_date }}</p>
-            </div>
-        {% else %}
+    {% if not object.past_due %}
+        <div class="row">
+            <p>Status: In use</p>
+        </div>
+        {% if user_id == object.renting_user_id %}
             <div class="row">
                 <p><b>Due on {{object.rental_due_date}}</b> ({{ object.days_remaining }} days remaining)</p>
             </div>
+            <div class="row">
+                <p>Total rental charge: ${{ object.rental_charge }}</p>
+            </div>
+        {% else %}
+            <div class="row">
+                <p>Available for rent on {{object.rental_due_date}} ({{ object.days_remaining }} days remaining)</p>
+            </div>
         {% endif %}
+    {% else %}
+        <div class="row">
+            <p>Status: <b>Available</b></p>
+        </div>
+        <div class="mb-3">
+            <label for="daysInput" class="form-label">Days to borrow:</label>
+            <input type="number" class="form-control" id="days_rented" name="days_rented" max="30" min="0">
+        </div>
+        <input type="submit" value="Rent">
     {% endif %}
-    <div class="row">
-        <p>Rental charge: ${{ object.rental_charge }}</p>
-    </div>
+    
 {% endblock content %}
