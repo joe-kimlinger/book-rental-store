@@ -1,0 +1,21 @@
+{% extends "books/base.html" %}
+
+{% block title %}Home{% endblock title %}
+
+{% block content %}
+<div class="row">
+    {% if book_list %}
+        {% for book in book_list %}
+        <div class="col-sm">
+            <h4>{{book.title}}</h4>
+            <h6>{{book.author}}</h6>
+            <a href="{% url 'book_detail' book.id %}" type="button">Rent</a>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-xl">
+        <p>No books are available.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

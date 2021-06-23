@@ -1,0 +1,22 @@
+{% extends "books/base.html" %}
+
+{% block title %}My Books{% endblock title%}
+
+{% block content %}
+  <div class="row">
+    {% if my_books_list %}
+      {% for book in my_books_list %}
+        <div class="col-sm">
+            <h4>{{book.title}}</h4>
+            <h6>{{book.author}}</h6>
+            <p>Rented: {{ book.days_rented }}</p>
+            <p>Charge: {{ book.current_rental_charge }}</p>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-xl">
+          <p>You currently have no rented books.</p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock content %}

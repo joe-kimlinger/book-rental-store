@@ -1,0 +1,32 @@
+{% extends "books/base.html" %}
+
+{% block title %}Home{% endblock title %}
+
+{% block content %}
+    <div class="row">
+        <h2>{{object.title}}</h2>
+    </div>
+    <div class="row">
+        <h4>{{object.author}}</h4>
+    </div>
+    <div class="row">
+        <p>Rental charge per day: ${{object.rental_rate}}
+    </div>
+    {% if user_id == object.renting_user_id %}
+        {% if object.past_due %}
+            <div class="row">
+                <p>Returned on {{ object.rental_due_date }}</p>
+            </div>
+            <div class="row">
+                <p>Returned on {{ object.rental_due_date }}</p>
+            </div>
+        {% else %}
+            <div class="row">
+                <p><b>Due on {{object.rental_due_date}}</b> ({{ object.days_remaining }} days remaining)</p>
+            </div>
+        {% endif %}
+    {% endif %}
+    <div class="row">
+        <p>Rental charge: ${{ object.rental_charge }}</p>
+    </div>
+{% endblock content %}
