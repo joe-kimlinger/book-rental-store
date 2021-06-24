@@ -1,9 +1,7 @@
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MaxValueValidator, MinValueValidator 
+from django.contrib.auth.models import User
 
-
-# Create your models here.
 
 class Book(models.Model):
     title = models.TextField()
@@ -11,7 +9,7 @@ class Book(models.Model):
     days_rented = models.PositiveIntegerField(blank=True, null=True)
     rental_due_date = models.DateTimeField(default=timezone.now)
     rental_rate = models.DecimalField(max_digits=12, decimal_places=2, default=1.00)
-    renting_user_id = models.IntegerField(blank=True, null=True)
+    renting_user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.title
@@ -21,7 +19,10 @@ class Book(models.Model):
         return max(delta.days, 0)
 
     def rental_charge(self):
-        return self.days_rented * self.rental_rate
+        if self.days_rented == None:
+            raise Exception('Error: days_rented is undefined')
+            
+        return max(self.days_rented * self.rental_rate, 0)
     
     def past_due(self):
         return self.rental_due_date < timezone.now()

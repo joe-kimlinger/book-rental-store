@@ -1,4 +1,4 @@
-{% extends "books/base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Home{% endblock title %}
 
@@ -19,7 +19,7 @@
         <div class="row">
             <p>Status: In use</p>
         </div>
-        {% if user_id == object.renting_user_id %}
+        {% if user.id == object.renting_user.id %}
             <div class="row">
                 <p><b>Due on {{object.rental_due_date}}</b> ({{ object.days_remaining }} days remaining)</p>
             </div>

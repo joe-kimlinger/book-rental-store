@@ -1,21 +1,27 @@
-{% extends "books/base.html" %}
+{% extends "base.html" %}
 
 {% block title %}My Books{% endblock title%}
 
 {% block content %}
-  <div class="row">
     {% if my_books_list %}
-      {% for book in my_books_list %}
-        <div class="col-sm">
-            <h4>{{book.title}}</h4>
-            <h6>{{book.author}}</h6>
-            <h6>Due in {{book.days_remaining}} days </h6>
-            <a href="{% url 'book_detail' book.id %}" type="button">View Details</a>
-        </div>
-      {% endfor %}
+      <div class="row" style="padding-bottom: 20px">
+          <h2>Current Rentals</h2>
+      </div>
+      <div class="row">
+        {% for book in my_books_list %}
+          <div class="col-sm">
+              <h4>{{book.title}}</h4>
+              <h6>{{book.author}}</h6>
+              <h6>Due in {{book.days_remaining}} days </h6>
+              <a href="{% url 'book_detail' book.id %}" type="button">View Details</a>
+          </div>
+        {% endfor %}
+      </div>
     {% else %}
-      <div class="col-xl">
-          <p>You currently have no rented books.</p>
+      <div class="row">
+        <div class="col-xl">
+            <p>You currently have no rented books.</p>
+        </div>
       </div>
     {% endif %}
   </div>
