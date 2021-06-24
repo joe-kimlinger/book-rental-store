@@ -44,16 +44,16 @@ def rent(request, pk):
     
     book = get_object_or_404(Book, pk=pk)
 
-    if not book.past_due():
+    if not book.available():
         message = ''
         if book.renting_user == request.user:
             message = "You're already renting this book."
-        elif book.renting_user:
+        else:
             message = "Sorry, someone else is renting this right now."
         
         if message:
             return HttpResponseForbidden(message)
-            
+
     book.renting_user = request.user
     
     days_rented = int(request.POST['days_rented'])

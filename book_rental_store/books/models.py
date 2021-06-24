@@ -24,5 +24,5 @@ class Book(models.Model):
             
         return max(self.days_rented * self.rental_rate, 0)
     
-    def past_due(self):
-        return self.rental_due_date < timezone.now()
+    def available(self):
+        return (self.rental_due_date < timezone.now()) or not self.renting_user

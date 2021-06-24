@@ -21,11 +21,12 @@ books/migrations/0010_auto_20210622_2028.py                               5     
 books/migrations/0011_auto_20210622_2058.py                               4      0   100%
 books/migrations/0012_auto_20210622_2148.py                               5      0   100%
 books/migrations/0013_alter_book_days_rented.py                           4      0   100%
+books/migrations/0014_auto_20210623_2356.py                               6      0   100%
 books/migrations/__init__.py                                              0      0   100%
 books/models.py                                                          21      0   100%
-books/tests.py                                                          247      0   100%
+books/tests.py                                                          256      0   100%
 books/urls.py                                                             3      0   100%
 books/views.py                                                           43      0   100%
 manage.py                                                                 5      0   100%
 -----------------------------------------------------------------------------------------
-TOTAL                                                                   419      8    98%
+TOTAL                                                                   434      8    98%

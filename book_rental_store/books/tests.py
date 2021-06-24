@@ -79,32 +79,41 @@ class BookModelTests(TestCase):
         book = Book(rental_rate=rental_rate, days_rented=days_rented)
         self.assertEqual(book.rental_charge(), rental_rate * days_rented)
 
-    
-    def test_past_due_past_due_date(self):
+
+    def test_available_past_due_date_null_user(self):
         """
-        check that past_due() returns true for book past due date
+        check that available() returns true with a null user
         """
-        time = timezone.now() + datetime.timedelta(days=-3)
+        time = timezone.now() + datetime.timedelta(days=-1)
         past_due_book = Book(rental_due_date=time)
-        self.assertTrue(past_due_book.past_due())
-    
-
-    def test_past_due_before_due_date(self):
-        """
-        check that past_due() returns false for book before due date
-        """
-        time = timezone.now() + datetime.timedelta(days=5)
-        almsot_due_book = Book(rental_due_date=time)
-        self.assertFalse(almsot_due_book.past_due())
+        self.assertTrue(past_due_book.available())
 
 
-    def test_past_due_just_past_due_date(self):
+    def test_available_before_due_date_null_user(self):
         """
-        check that past_due() returns true for book immediately after due date
+        check that available() returns true with a null user
         """
-        time = timezone.now() + datetime.timedelta(seconds=-1)
+        time = timezone.now() + datetime.timedelta(days=1)
         past_due_book = Book(rental_due_date=time)
-        self.assertTrue(past_due_book.past_due())
+        self.assertTrue(past_due_book.available())
+
+
+    def test_available_before_due_date_with_user(self):
+        """
+        check that available() returns false with a user and before the due date
+        """
+        time = timezone.now() + datetime.timedelta(days=1)
+        past_due_book = Book(rental_due_date=time, renting_user=User.objects.create())
+        self.assertFalse(past_due_book.available())
+
+
+    def test_available_past_due_date_with_user(self):
+        """
+        check that available() returns true with a user and past the due date
+        """
+        time = timezone.now() + datetime.timedelta(days=-1)
+        past_due_book = Book(rental_due_date=time, renting_user=User.objects.create())
+        self.assertTrue(past_due_book.available())
 
 
     def test_str_conversion(self):
@@ -122,6 +131,8 @@ class BookModelTests(TestCase):
         """
         book = Book()
         self.assertEqual(str(book), '')
+
+
 
 ####### VIEW UNIT TESTS ##########
 
