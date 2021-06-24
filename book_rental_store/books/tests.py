@@ -444,7 +444,7 @@ class RentTestCases(TestCase):
         self.client.login(username=self.test_username, password=self.test_password)
 
         time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
+        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=self.user)
         response = self.client.post(reverse('rent', args=[book.id]), {'days_rented': '10'})
         self.assertEqual(response.status_code, 403)
     
