@@ -15,11 +15,11 @@
     <div class="row">
         <p>Rental charge per day: ${{object.rental_rate}}
     </div>
-    {% if not object.past_due %}
+    {% if not object.past_due and object.renting_user %}
         <div class="row">
             <p>Status: In use</p>
         </div>
-        {% if user.id == object.renting_user.id %}
+        {% if user == object.renting_user %}
             <div class="row">
                 <p><b>Due on {{object.rental_due_date}}</b> ({{ object.days_remaining }} days remaining)</p>
             </div>

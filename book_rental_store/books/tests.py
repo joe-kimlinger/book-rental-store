@@ -346,12 +346,27 @@ class BookDetailViewTests(TestCase):
         self.client.login(username=self.test_username, password=self.test_password)
 
         time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time)
+        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: In use")
         self.assertNotContains(response, "Total rental charge")
     
+
+    def test_book_detail_past_due_empty_user(self):
+        """
+        If the book is past due but there's an empty renting_user value, it's available
+        """
+        self.client.login(username=self.test_username, password=self.test_password)
+
+        time = timezone.now() + datetime.timedelta(days=3)
+        book = Book.objects.create(title='Test Book', rental_due_date=time,)
+        response = self.client.get(reverse('book_detail', args=(book.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Status: <b>Available</b>")
+        self.assertContains(response, "Days to borrow:")
+        self.assertNotContains(response, "Total rental charge")
+
 
     def test_book_detail_my_rented_book(self):
         """
@@ -389,11 +404,12 @@ class BookDetailViewTests(TestCase):
         self.client.login(username=self.test_username, password=self.test_password)
 
         time = timezone.now() + datetime.timedelta(days=-3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time)
+        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: <b>Available</b>")
         self.assertContains(response, "Days to borrow:")
+
 
 class RentTestCases(TestCase):
     test_username = 'unit-test-user'
