@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 
 
 class Book(models.Model):
-    title = models.TextField()
-    author = models.TextField()
+    title = models.CharField(max_length=75)
+    author = models.CharField(max_length=75)
+    book_type = models.CharField(max_length=50)
     days_rented = models.PositiveIntegerField(blank=True, null=True)
     rental_due_date = models.DateTimeField(default=timezone.now)
     rental_rate = models.DecimalField(max_digits=12, decimal_places=2, default=1.00)
