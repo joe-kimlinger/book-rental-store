@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 
 class BookType(models.Model):
-    book_type = models.CharField(max_length=50, unique=True)
+    book_type = models.CharField(max_length=50)
     rental_rate = models.DecimalField(max_digits=12, decimal_places=2, default=1.50)
 
     def __str__(self):

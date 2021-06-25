@@ -262,12 +262,12 @@ class BooksViewTests(TestCase):
 
 
 class MyBooksViewTests(TestCase):
-    test_username = 'unit-test-user'
-    test_email = 'unit@test.com'
-    test_password = 'unittest'
+    username_test = 'unit-test-user'
+    email_test = 'unit@test.com'
+    password_test = 'unittest'
 
     def setUp(self):
-        self.user = User.objects.create_user(self.test_username, self.test_email, self.test_password)
+        self.user = User.objects.create_user(self.username_test, self.email_test, self.password_test)
 
 
     def test_mybooks_not_logged_in_redirect(self):
@@ -283,7 +283,7 @@ class MyBooksViewTests(TestCase):
         """
         If no books are rented display appropriate message
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
@@ -295,7 +295,7 @@ class MyBooksViewTests(TestCase):
         """
         If all books are past due, display appropriate message
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         create_book_helper('Test Book', -3)
         response = self.client.get(reverse('my_books'))
@@ -309,7 +309,7 @@ class MyBooksViewTests(TestCase):
         """
         If a book has no renting user, don't display it in my books
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         create_book_helper('Test Book', 3)
         response = self.client.get(reverse('my_books'))
@@ -322,7 +322,7 @@ class MyBooksViewTests(TestCase):
         """
         Don't display books from another user
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         create_book_helper('Test Book', 3, User.objects.create())
         response = self.client.get(reverse('my_books'))
@@ -335,7 +335,7 @@ class MyBooksViewTests(TestCase):
         """
         Display books that are rented but not past due ones or for other users
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         rented_book = create_book_helper('Rented Book', 3, self.user)
         no_user_book = create_book_helper('No User Book', 3, User.objects.create())
@@ -353,7 +353,7 @@ class MyBooksViewTests(TestCase):
         """
         Test multiple of my books with different due dates
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         rented_book_1 = create_book_helper('Test Book 1', 3, self.user)
         rented_book_2 = create_book_helper('Test Book 2', 5, self.user)
@@ -368,29 +368,18 @@ class MyBooksViewTests(TestCase):
 
 
 class BookDetailViewTests(TestCase):
-    test_username = 'unit-test-user'
-    test_email = 'unit@test.com'
-    test_password = 'unittest'
+    username_test = 'unit-test-user'
+    email_test = 'unit@test.com'
+    password_test = 'unittest'
 
     def setUp(self):
-        self.user = User.objects.create_user(self.test_username, self.test_email, self.test_password)
-    
-
-    def test_book_detail_not_logged_in(self):
-        """
-        If not logged in, navigating to book detail should redirect with book detail as return
-        """
-        response = self.client.get(reverse('book_detail', args=(0,)))
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/accounts/login/?next=/books/0')
+        self.user = User.objects.create_user(self.username_test, self.email_test, self.password_test)
 
 
     def test_book_detail_book_not_found(self):
         """
         If book is not found, return 404
         """
-        self.client.login(username=self.test_username, password=self.test_password)
-
         response = self.client.get(reverse('book_detail', args=(0,)))
         self.assertEqual(response.status_code, 404)
 
@@ -399,7 +388,7 @@ class BookDetailViewTests(TestCase):
         """
         If someone else is renting the book, display due date and in use status
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', 3, User.objects.create())
 
@@ -413,7 +402,7 @@ class BookDetailViewTests(TestCase):
         """
         If the book is past due but there's an empty renting_user value, it's available
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', 3)
 
@@ -422,13 +411,25 @@ class BookDetailViewTests(TestCase):
         self.assertContains(response, "Status: <b>Available</b>")
         self.assertContains(response, "Days to borrow:")
         self.assertNotContains(response, "Total rental charge")
+    
+
+    def test_book_detail_past_due_empty_user_not_logged_in(self):
+        """
+        If the book is past due but there's an empty renting_user value, it's available
+        """
+        book = create_book_helper('Test Book', 3)
+
+        response = self.client.get(reverse('book_detail', args=(book.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Days to borrow:")
+        self.assertContains(response, 'Login</a> to rent this book!')
 
 
     def test_book_detail_my_rented_book(self, book_type=BookType()):
         """
         If I'm renting the book, display due date, in use status, and total rental charge
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', 3, self.user, days_rented=12)
 
@@ -442,7 +443,7 @@ class BookDetailViewTests(TestCase):
         """
         If book was mine most recently but is past due date, show as available
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', -3, self.user)
 
@@ -457,7 +458,7 @@ class BookDetailViewTests(TestCase):
         """
         If book is past due date, show as available
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', -3, User.objects.create())
 
@@ -468,12 +469,12 @@ class BookDetailViewTests(TestCase):
 
 
 class RentTestCases(TestCase):
-    test_username = 'unit-test-user'
-    test_email = 'unit@test.com'
-    test_password = 'unittest'
+    username_test = 'unit-test-user'
+    email_test = 'unit@test.com'
+    password_test = 'unittest'
 
     def setUp(self):
-        self.user = User.objects.create_user(self.test_username, self.test_email, self.test_password)
+        self.user = User.objects.create_user(self.username_test, self.email_test, self.password_test)
 
     
     def test_rent_not_logged_in(self):
@@ -489,7 +490,7 @@ class RentTestCases(TestCase):
         """
         If book not found, return 404
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         response = self.client.post('/0/rent', {'days_rented': '10'})
         self.assertEqual(response.status_code, 404)
@@ -500,7 +501,7 @@ class RentTestCases(TestCase):
         If someone else is renting the book, return a 403 and a message
         This is not currently possible in the app flow, but want to test it in case
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         time = timezone.now() + datetime.timedelta(days=3)
         book = create_book_helper('Test Book', 3, User.objects.create())
@@ -513,7 +514,7 @@ class RentTestCases(TestCase):
         If I'm currently renting the book, return a 403 and a message
         This is not currently possible in the app flow, but want to test it in case
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', 3, self.user)
         response = self.client.post(reverse('rent', args=[book.id]), {'days_rented': '10'})
@@ -524,7 +525,7 @@ class RentTestCases(TestCase):
         """
         Rent a book that's available because it's past due
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', -3, User.objects.create(), days_rented=1)
 
@@ -541,7 +542,7 @@ class RentTestCases(TestCase):
         """
         Rent a book that's available because its renting_user is null
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         book = create_book_helper('Test Book', -3, days_rented=1)
         response = self.client.post(reverse('rent', args=[book.id]), {'days_rented': '10'})
