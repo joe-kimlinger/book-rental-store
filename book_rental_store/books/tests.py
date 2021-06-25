@@ -47,8 +47,8 @@ class BookModelTests(TestCase):
         """
         days_remaining() should return 0 if the due_date is in the past
         """
-        time = timezone.now() + datetime.timedelta(days=-3)
-        past_due_book = Book(rental_due_date=time, book_type=BookType())
+        past_due_book = create_book_helper(day_diff=-3) 
+
         self.assertEqual(past_due_book.days_remaining(), 0)
     
 
@@ -59,6 +59,7 @@ class BookModelTests(TestCase):
         """
         time = timezone.now() + datetime.timedelta(hours=12)
         almost_due_book = Book(rental_due_date=time, book_type=BookType())
+
         self.assertEqual(almost_due_book.days_remaining(), 0)
 
 
@@ -69,6 +70,7 @@ class BookModelTests(TestCase):
         delta = 12
         time = timezone.now() + datetime.timedelta(days=delta, minutes=1)
         almost_due_book = Book(rental_due_date=time, book_type=BookType())
+        
         self.assertEqual(almost_due_book.days_remaining(), delta)
     
 
@@ -76,7 +78,8 @@ class BookModelTests(TestCase):
         """
         check that rental_charge() with emtpy days_rented raises exception
         """
-        book = Book(book_type=BookType())
+        book = create_book_helper() 
+        
         with self.assertRaises(Exception) as exc:
             book.rental_charge()
 
@@ -87,8 +90,8 @@ class BookModelTests(TestCase):
         """
         check that rental_charge() still gives total rental charge after due date
         """
-        time = timezone.now() + datetime.timedelta(days=-6)
-        past_due_book = Book(rental_due_date=time, days_rented=10, book_type=BookType())
+        past_due_book = create_book_helper(day_diff=-6,  days_rented=10) 
+
         self.assertEqual(past_due_book.rental_charge(), 15.00)
 
 
