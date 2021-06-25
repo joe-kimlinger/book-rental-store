@@ -41,7 +41,7 @@ class BookTypeModelTests(TestCase):
         self.assertEqual(str(book_type), type)
 
 
-class BookModelTests(TestCase):
+class BookModelTests(TestCase): # pragma: no cover
 
     def test_days_remaining_with_past_due_date(self):
         """
@@ -97,7 +97,7 @@ class BookModelTests(TestCase):
 
     def test_rental_charge_before_due_date(self):
         """
-        check that rental_charge() still gives total rental charge before due date
+        check that rental_charge() still gives correct rental charge before due date
         """
         days = 10
         rate = 1.6
@@ -117,6 +117,61 @@ class BookModelTests(TestCase):
         book_1 = create_book_helper('Title', days_rented=days_rented, book_type=book_type_1)
         book_2 = create_book_helper('Title', days_rented=days_rented, book_type=book_type_2)
         self.assertNotEqual(book_1.rental_charge(), book_2.rental_charge())
+    
+
+    def test_rental_charge_min_days_book_type(self):
+        """
+        check that rental_charge() calulcates rental charge correct for min charge type
+        """
+        days_rented = 10
+        min_days = 2
+        min_days_rate = 5
+        rental_rate = 4.50
+        book_type = BookType.objects.create(book_type="Novel", rental_rate=rental_rate, 
+                                              min_days=min_days, min_days_rate=min_days_rate)
+        book = create_book_helper('Title', days_rented=days_rented, book_type=book_type)
+        self.assertEqual(book.rental_charge(), min_days_rate * min_days + rental_rate * (days_rented - min_days))
+    
+
+    def test_rental_charge_under_min_days(self):
+        """
+        check that rental_charge() gives minimum charge if rental days is under min_days
+        """
+        days_rented = 3
+        min_days = 5
+        min_days_rate = 5
+        rental_rate = 4.50
+        book_type = BookType.objects.create(book_type="Novel", rental_rate=rental_rate, 
+                                              min_days=min_days, min_days_rate=min_days_rate)
+        book = create_book_helper('Title', days_rented=days_rented, book_type=book_type)
+        self.assertEqual(book.rental_charge(), min_days_rate * min_days)
+
+
+    def test_rental_charge_negative_min_days_rate(self):
+        """
+        check that rental_charge() does not give negatives for rental rate
+        """
+        days_rented = 3
+        rental_rate = -4.50
+        book_type = BookType.objects.create(book_type="Novel", rental_rate=rental_rate)
+        book = create_book_helper('Title', days_rented=days_rented, book_type=book_type)
+        self.assertEqual(book.rental_charge(), 0)
+
+
+    def test_rental_charge_negative_min_days_rate(self):
+        """
+        check that rental_charge() does not give negatives for min days rate
+        This is a misconfigured book type because it's not charging for the min_days period
+        If this occurs, we at least don't want to have a negative charge, no charge is fine
+        """
+        days_rented = 3
+        min_days = 5
+        min_days_rate = -5.50
+        rental_rate = 4.50
+        book_type = BookType.objects.create(book_type="Novel", rental_rate=rental_rate, 
+                                              min_days=min_days, min_days_rate=min_days_rate)
+        book = create_book_helper('Title', days_rented=days_rented, book_type=book_type)
+        self.assertEqual(book.rental_charge(), 0)
 
 
     def test_available_past_due_date_null_user(self):
@@ -480,8 +535,22 @@ class BookDetailViewTests(TestCase):
 
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "thereafter")
+        self.assertNotContains(response, "Minimum charge:")
+    
 
-        self.assertContains(response, "Rental charge per day: $5.50")
+    def test_book_detail_shows_right_rental_rate_min_days(self):
+        """
+        Show the rental rate related to the book type
+        """
+        book_type = BookType.objects.create(book_type='Test type', rental_rate=5.50,
+                                            min_days=5, min_days_rate=3.50)
+        book = create_book_helper('Test Book', -3, User.objects.create(), book_type)
+
+        response = self.client.get(reverse('book_detail', args=(book.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "thereafter")
+        self.assertContains(response, "Minimum charge:")
 
 
 class RentTestCases(TestCase):
