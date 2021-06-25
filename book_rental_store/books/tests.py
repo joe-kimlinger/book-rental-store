@@ -147,6 +147,33 @@ class BookModelTests(TestCase):
         self.assertEqual(book.rental_charge(), min_days_rate * min_days)
 
 
+    def test_rental_charge_negative_min_days_rate(self):
+        """
+        check that rental_charge() does not give negatives for rental rate
+        """
+        days_rented = 3
+        rental_rate = -4.50
+        book_type = BookType.objects.create(book_type="Novel", rental_rate=rental_rate)
+        book = create_book_helper('Title', days_rented=days_rented, book_type=book_type)
+        self.assertEqual(book.rental_charge(), 0)
+
+
+    def test_rental_charge_negative_min_days_rate(self):
+        """
+        check that rental_charge() does not give negatives for min days rate
+        This is a misconfigured book type because it's not charging for the min_days period
+        If this occurs, we at least don't want to have a negative charge, no charge is fine
+        """
+        days_rented = 3
+        min_days = 5
+        min_days_rate = -5.50
+        rental_rate = 4.50
+        book_type = BookType.objects.create(book_type="Novel", rental_rate=rental_rate, 
+                                              min_days=min_days, min_days_rate=min_days_rate)
+        book = create_book_helper('Title', days_rented=days_rented, book_type=book_type)
+        self.assertEqual(book.rental_charge(), 0)
+
+
     def test_available_past_due_date_null_user(self):
         """
         check that available() returns true with a null user
