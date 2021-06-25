@@ -23,12 +23,19 @@ class MyBooksListView(LoginRequiredMixin, generic.ListView):
     context_object_name = 'my_books_list'
 
     def get_queryset(self):
-        print(self.request.user)
         return Book.objects\
                 .filter(renting_user=self.request.user.id)\
                 .filter(rental_due_date__gte=timezone.now())\
                 .order_by('rental_due_date')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        book_list = Book.objects\
+                .filter(renting_user=self.request.user.id)\
+                .filter(rental_due_date__gte=timezone.now())\
+                .order_by('rental_due_date')
+        context['my_books_total'] = sum([book.rental_charge() for book in book_list.all()])
+        return context
 
 class BookDetailView(generic.DetailView):
     model = Book
