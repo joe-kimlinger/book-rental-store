@@ -7,9 +7,9 @@
       <div class="row" style="padding-bottom: 20px">
           <h2>Current Rentals</h2>
       </div>
-      <div class="row">
+      <div class="row d-flex justify-content-around">
         {% for book in my_books_list %}
-          <div class="col-sm">
+          <div class="col-sm-3 border rounded p-2">
               <h4>{{book.title}}</h4>
               <h6>{{book.author}}</h6>
               <h6>Due in {{book.days_remaining}} days </h6>
