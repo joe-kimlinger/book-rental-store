@@ -34,4 +34,5 @@ jobs:
     - name: Test with django
       run: |
         cd book_rental_store
+        echo "SECRET_KEY=secret" > .env
         python manage.py test books
