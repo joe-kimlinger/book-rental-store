@@ -16,8 +16,17 @@
         <p>Book type: {{object.book_type}}</p>
     </div>
     <div class="row">
-        <p>Rental charge per day: ${{object.book_type.rental_rate}}
-    </div>
+        <p>Rental charge:
+        {% if object.book_type.min_days %}
+            ${{object.book_type.min_days_rate}}/day for the first {{object.book_type.min_days}} days then ${{object.book_type.rental_rate}}/day thereafter</p>
+            </div>
+            <div class="row">
+                <p>Minimum charge: ${{object.minimum_charge}}</p>
+            </div>
+        {% else %}
+            ${{object.book_type.rental_rate}}/day</p>
+            </div>
+        {% endif %}
     {% if not object.available %}
         <div class="row">
             <p>Status: In use</p>
