@@ -41,7 +41,7 @@ class BookTypeModelTests(TestCase):
         self.assertEqual(str(book_type), type)
 
 
-class BookModelTests(TestCase):
+class BookModelTests(TestCase): # pragma: no cover
 
     def test_days_remaining_with_past_due_date(self):
         """
