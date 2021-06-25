@@ -395,9 +395,9 @@ class MyBooksViewTests(TestCase):
         """
         self.client.force_login(self.user)
 
-        rented_book = create_book_helper('Rented Book', 3, self.user)
-        no_user_book = create_book_helper('No User Book', 3, User.objects.create())
-        past_due_book = create_book_helper('Past Due Book', -3, self.user)
+        rented_book = create_book_helper('Rented Book', 3, self.user, days_rented=5)
+        no_user_book = create_book_helper('No User Book', 3, User.objects.create(), days_rented=5)
+        past_due_book = create_book_helper('Past Due Book', -3, self.user, days_rented=5)
 
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
@@ -413,8 +413,8 @@ class MyBooksViewTests(TestCase):
         """
         self.client.force_login(self.user)
 
-        rented_book_1 = create_book_helper('Test Book 1', 3, self.user)
-        rented_book_2 = create_book_helper('Test Book 2', 5, self.user)
+        rented_book_1 = create_book_helper('Test Book 1', 3, self.user, days_rented=5)
+        rented_book_2 = create_book_helper('Test Book 2', 5, self.user, days_rented=5)
 
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)

@@ -2,7 +2,7 @@ Name                                                                  Stmts   Mi
 -----------------------------------------------------------------------------------------
 book_rental_store/__init__.py                                             0      0   100%
 book_rental_store/asgi.py                                                 4      4     0%
-book_rental_store/settings.py                                            23      0   100%
+book_rental_store/settings.py                                            25      0   100%
 book_rental_store/urls.py                                                 4      0   100%
 book_rental_store/wsgi.py                                                 4      4     0%
 books/__init__.py                                                         0      0   100%
@@ -32,7 +32,7 @@ books/migrations/__init__.py                                              0     
 books/models.py                                                          31      0   100%
 books/tests.py                                                          214      0   100%
 books/urls.py                                                             3      0   100%
-books/views.py                                                           42      0   100%
+books/views.py                                                           46      0   100%
 manage.py                                                                 5      0   100%
 -----------------------------------------------------------------------------------------
-TOTAL                                                                   434      8    98%
+TOTAL                                                                   440      8    98%
