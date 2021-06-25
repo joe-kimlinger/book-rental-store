@@ -38,11 +38,15 @@
         <div class="row">
             <p>Status: <b>Available</b></p>
         </div>
-        <div class="mb-3">
-            <label for="daysInput" class="form-label">Days to borrow:</label>
-            <input type="number" class="form-control" id="days_rented" name="days_rented" max="30" min="0">
-        </div>
-        <input type="submit" value="Rent">
+        {% if user.is_authenticated %}
+            <div class="mb-3">
+                <label for="daysInput" class="form-label">Days to borrow:</label>
+                <input type="number" class="form-control" id="days_rented" name="days_rented" max="30" min="0">
+            </div>
+            <input type="submit" value="Rent">
+        {% else %}
+            <a href="{% url 'login' %}?next={{request.path}}">Login</a> to rent this book!
+        {% endif %}
     {% endif %}
     
 {% endblock content %}

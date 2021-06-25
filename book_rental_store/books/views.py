@@ -30,7 +30,7 @@ class MyBooksListView(LoginRequiredMixin, generic.ListView):
                 .order_by('rental_due_date')
 
 
-class BookDetailView(LoginRequiredMixin, generic.DetailView):
+class BookDetailView(generic.DetailView):
     model = Book
     template_name = 'books/book_detail.html'
 
