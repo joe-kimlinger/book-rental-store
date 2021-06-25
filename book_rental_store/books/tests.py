@@ -5,10 +5,41 @@ from django.urls.base import reverse
 from django.utils import timezone
 import datetime
 
-from .models import Book
+from .models import Book, BookType
+
+
+# Helper function for creating a book with various properties
+def create_book_helper(title='', day_diff=None, renting_user='blank', book_type=None, days_rented=None):
+    
+        time=timezone.now()
+        if day_diff:
+            time = timezone.now() + datetime.timedelta(days=day_diff)
+
+        
+        if not book_type:
+            book_type = BookType.objects.create()
+            book_type.save()
+
+        if renting_user == 'blank':
+            renting_user = None
+
+        
+        return Book.objects.create(title=title, rental_due_date=time, renting_user=renting_user, 
+                                   book_type=book_type, days_rented=days_rented)
 
 
 ####### MODEL UNIT TESTS ##########
+
+class BookTypeModelTests(TestCase):
+
+    def test_str_conversion(self):
+        """
+        check that __str__() returns book type
+        """
+        type = 'My Type'
+        book_type = BookType(book_type=type)
+        self.assertEqual(str(book_type), type)
+
 
 class BookModelTests(TestCase):
 
@@ -16,8 +47,8 @@ class BookModelTests(TestCase):
         """
         days_remaining() should return 0 if the due_date is in the past
         """
-        time = timezone.now() + datetime.timedelta(days=-3)
-        past_due_book = Book(rental_due_date=time)
+        past_due_book = create_book_helper(day_diff=-3) 
+
         self.assertEqual(past_due_book.days_remaining(), 0)
     
 
@@ -27,7 +58,8 @@ class BookModelTests(TestCase):
         from the current date
         """
         time = timezone.now() + datetime.timedelta(hours=12)
-        almost_due_book = Book(rental_due_date=time)
+        almost_due_book = Book(rental_due_date=time, book_type=BookType())
+
         self.assertEqual(almost_due_book.days_remaining(), 0)
 
 
@@ -37,7 +69,8 @@ class BookModelTests(TestCase):
         """
         delta = 12
         time = timezone.now() + datetime.timedelta(days=delta, minutes=1)
-        almost_due_book = Book(rental_due_date=time)
+        almost_due_book = Book(rental_due_date=time, book_type=BookType())
+        
         self.assertEqual(almost_due_book.days_remaining(), delta)
     
 
@@ -45,7 +78,8 @@ class BookModelTests(TestCase):
         """
         check that rental_charge() with emtpy days_rented raises exception
         """
-        book = Book()
+        book = create_book_helper() 
+        
         with self.assertRaises(Exception) as exc:
             book.rental_charge()
 
@@ -56,36 +90,41 @@ class BookModelTests(TestCase):
         """
         check that rental_charge() still gives total rental charge after due date
         """
-        time = timezone.now() + datetime.timedelta(days=-6)
-        past_due_book = Book(rental_due_date=time, days_rented=10)
-        self.assertEqual(past_due_book.rental_charge(), 10.00)
+        past_due_book = create_book_helper(day_diff=-6,  days_rented=10) 
+
+        self.assertEqual(past_due_book.rental_charge(), 15.00)
 
 
     def test_rental_charge_before_due_date(self):
         """
         check that rental_charge() still gives total rental charge before due date
         """
-        time = timezone.now() + datetime.timedelta(days=-6)
-        almost_due_book = Book(rental_due_date=time, days_rented=10)
-        self.assertEqual(almost_due_book.rental_charge(), 10.00)
+        days = 10
+        rate = 1.6
+        book_type = BookType.objects.create(rental_rate=rate)
+        almost_due_book = create_book_helper('Title', -6, days_rented=days, book_type=book_type)
+
+        self.assertEqual(almost_due_book.rental_charge(), days * book_type.rental_rate)
     
 
-    def test_rental_charge_different_rental_rate(self):
+    def test_rental_charge_different_book_type(self):
         """
-        check that rental_charge() still gives total rental charge before due date
+        check that rental_charge() gives different charges for different book types
         """
+        book_type_1 = BookType.objects.create(book_type="Novel", rental_rate=4.50)
+        book_type_2 = BookType.objects.create(book_type="Regular", rental_rate=3.50)
         days_rented = 10
-        rental_rate = 3.50
-        book = Book(rental_rate=rental_rate, days_rented=days_rented)
-        self.assertEqual(book.rental_charge(), rental_rate * days_rented)
+        book_1 = create_book_helper('Title', days_rented=days_rented, book_type=book_type_1)
+        book_2 = create_book_helper('Title', days_rented=days_rented, book_type=book_type_2)
+        self.assertNotEqual(book_1.rental_charge(), book_2.rental_charge())
 
 
     def test_available_past_due_date_null_user(self):
         """
         check that available() returns true with a null user
         """
-        time = timezone.now() + datetime.timedelta(days=-1)
-        past_due_book = Book(rental_due_date=time)
+        past_due_book = create_book_helper(day_diff=-1)
+
         self.assertTrue(past_due_book.available())
 
 
@@ -93,8 +132,8 @@ class BookModelTests(TestCase):
         """
         check that available() returns true with a null user
         """
-        time = timezone.now() + datetime.timedelta(days=1)
-        past_due_book = Book(rental_due_date=time)
+        past_due_book = create_book_helper(days_rented=1)
+
         self.assertTrue(past_due_book.available())
 
 
@@ -102,8 +141,8 @@ class BookModelTests(TestCase):
         """
         check that available() returns false with a user and before the due date
         """
-        time = timezone.now() + datetime.timedelta(days=1)
-        past_due_book = Book(rental_due_date=time, renting_user=User.objects.create())
+        past_due_book = create_book_helper('Test Book', 1, User.objects.create())
+
         self.assertFalse(past_due_book.available())
 
 
@@ -111,8 +150,8 @@ class BookModelTests(TestCase):
         """
         check that available() returns true with a user and past the due date
         """
-        time = timezone.now() + datetime.timedelta(days=-1)
-        past_due_book = Book(rental_due_date=time, renting_user=User.objects.create())
+        past_due_book = create_book_helper('Test Book', -1, User.objects.create())
+
         self.assertTrue(past_due_book.available())
 
 
@@ -121,22 +160,42 @@ class BookModelTests(TestCase):
         check that __str__() returns book title
         """
         title = 'My Title'
-        book = Book(title=title)
+        book = create_book_helper(title)
+
         self.assertEqual(str(book), title)
+
+
+    def test_deleting_user_makes_book_available(self):
+        """
+        check that removing a user that's renting a book makes the book available
+        """
+        user = User.objects.create()
+        book = create_book_helper(day_diff=3, renting_user=user)
+
+        book = Book.objects.get(id=book.id)
+        self.assertFalse(book.available())
+
+        User.objects.get(id=user.id).delete()
+
+        book = Book.objects.get(id=book.id)
+        self.assertTrue(book.available())
+
     
-
-    def test_str_conversion_no_title(self):
+    def test_deleting_type_throws_exception(self):
         """
-        check that __str__() for book with no title returns empty string
+        check removing a book type associated with a book throws an exception
         """
-        book = Book()
-        self.assertEqual(str(book), '')
+        book_type = BookType.objects.create()
+        create_book_helper(book_type=book_type)
 
+        with self.assertRaises(Exception) as exc:
+            BookType.objects.get(id=book_type.id).delete()
 
 
 ####### VIEW UNIT TESTS ##########
 
 class BooksViewTests(TestCase):
+
 
     def test_books_view_no_books(self):
         """
@@ -152,8 +211,7 @@ class BooksViewTests(TestCase):
         """
         If all books are rented, display no available message
         """
-        time = timezone.now() + datetime.timedelta(days=3)
-        rented_book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
+        create_book_helper('Test Book', 3, User.objects.create())
         response = self.client.get(reverse('books'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "There are currently no books available.")
@@ -164,8 +222,7 @@ class BooksViewTests(TestCase):
         """
         Display books that are available
         """
-        time = timezone.now() + datetime.timedelta(days=-3)
-        available_book = Book.objects.create(title='Test Book', rental_due_date=time)
+        available_book = create_book_helper('Test Book', -3)
         response = self.client.get(reverse('books'))
         self.assertEqual(response.status_code, 200)
         self.assertQuerysetEqual(
@@ -180,11 +237,9 @@ class BooksViewTests(TestCase):
         Books are available if they're past due OR their renting_user is null
         """
         new_user = User.objects.create()
-        time_1 = timezone.now() + datetime.timedelta(days=3)
-        rented_book = Book.objects.create(title='Test Book', rental_due_date=time_1, renting_user=new_user)
-        available_book_1 = Book.objects.create(title='Test Book', rental_due_date=time_1)
-        time_2 = timezone.now() + datetime.timedelta(days=-3)
-        available_book_2 = Book.objects.create(title='Test Book', rental_due_date=time_2, renting_user=new_user)
+        rented_book = create_book_helper('Rented Book', 3, new_user)
+        available_book_1 = create_book_helper('Available Book 1', 3)
+        available_book_2 = create_book_helper('Available Book 2', -3, new_user)
         response = self.client.get(reverse('books'))
         self.assertEqual(response.status_code, 200)
         self.assertQuerysetEqual(
@@ -198,10 +253,8 @@ class BooksViewTests(TestCase):
         """
         If multiple books are available, display books them all
         """
-        time_1 = timezone.now() + datetime.timedelta(days=-3)
-        available_book_1 = Book.objects.create(title='Test Book 1', rental_due_date=time_1)
-        time_2 = timezone.now() + datetime.timedelta(days=-5)
-        available_book_2 = Book.objects.create(title='Test Book 2', rental_due_date=time_2)
+        available_book_1 = create_book_helper('Test Book 1', -3)
+        available_book_2 = create_book_helper('Test Book 2', 5)
         response = self.client.get(reverse('books'))
         self.assertEqual(response.status_code, 200)
         self.assertQuerysetEqual(
@@ -212,12 +265,12 @@ class BooksViewTests(TestCase):
 
 
 class MyBooksViewTests(TestCase):
-    test_username = 'unit-test-user'
-    test_email = 'unit@test.com'
-    test_password = 'unittest'
+    username_test = 'unit-test-user'
+    email_test = 'unit@test.com'
+    password_test = 'unittest'
 
     def setUp(self):
-        self.user = User.objects.create_user(self.test_username, self.test_email, self.test_password)
+        self.user = User.objects.create_user(self.username_test, self.email_test, self.password_test)
 
 
     def test_mybooks_not_logged_in_redirect(self):
@@ -233,7 +286,7 @@ class MyBooksViewTests(TestCase):
         """
         If no books are rented display appropriate message
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
@@ -245,10 +298,9 @@ class MyBooksViewTests(TestCase):
         """
         If all books are past due, display appropriate message
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=-3)
-        Book.objects.create(title='Test Book', rental_due_date=time)
+        create_book_helper('Test Book', -3)
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "You currently have no rented books.")
@@ -260,10 +312,9 @@ class MyBooksViewTests(TestCase):
         """
         If a book has no renting user, don't display it in my books
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=3)
-        Book.objects.create(title='Test Book', rental_due_date=time)
+        create_book_helper('Test Book', 3)
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "You currently have no rented books.")
@@ -274,10 +325,9 @@ class MyBooksViewTests(TestCase):
         """
         Don't display books from another user
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=3)
-        Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
+        create_book_helper('Test Book', 3, User.objects.create())
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "You currently have no rented books.")
@@ -288,13 +338,12 @@ class MyBooksViewTests(TestCase):
         """
         Display books that are rented but not past due ones or for other users
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time_1 = timezone.now() + datetime.timedelta(days=3)
-        rented_book = Book.objects.create(title='Rented Book', rental_due_date=time_1, renting_user=self.user)
-        no_user_book = Book.objects.create(title='No User Book', rental_due_date=time_1)
-        time_2 = timezone.now() + datetime.timedelta(days=-3)
-        past_due_book = Book.objects.create(title='Past Due Book', rental_due_date=time_2, renting_user=self.user)
+        rented_book = create_book_helper('Rented Book', 3, self.user)
+        no_user_book = create_book_helper('No User Book', 3, User.objects.create())
+        past_due_book = create_book_helper('Past Due Book', -3, self.user)
+
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
         self.assertQuerysetEqual(
@@ -307,12 +356,11 @@ class MyBooksViewTests(TestCase):
         """
         Test multiple of my books with different due dates
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time_1 = timezone.now() + datetime.timedelta(days=3)
-        rented_book_1 = Book.objects.create(title='Test Book 1', rental_due_date=time_1, renting_user=self.user)
-        time_2 = timezone.now() + datetime.timedelta(days=5)
-        rented_book_2 = Book.objects.create(title='Test Book 2', rental_due_date=time_2, renting_user=self.user)
+        rented_book_1 = create_book_helper('Test Book 1', 3, self.user)
+        rented_book_2 = create_book_helper('Test Book 2', 5, self.user)
+
         response = self.client.get(reverse('my_books'))
         self.assertEqual(response.status_code, 200)
         self.assertQuerysetEqual(
@@ -323,29 +371,18 @@ class MyBooksViewTests(TestCase):
 
 
 class BookDetailViewTests(TestCase):
-    test_username = 'unit-test-user'
-    test_email = 'unit@test.com'
-    test_password = 'unittest'
+    username_test = 'unit-test-user'
+    email_test = 'unit@test.com'
+    password_test = 'unittest'
 
     def setUp(self):
-        self.user = User.objects.create_user(self.test_username, self.test_email, self.test_password)
-    
-
-    def test_book_detail_not_logged_in(self):
-        """
-        If not logged in, navigating to book detail should redirect with book detail as return
-        """
-        response = self.client.get(reverse('book_detail', args=(0,)))
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/accounts/login/?next=/books/0')
+        self.user = User.objects.create_user(self.username_test, self.email_test, self.password_test)
 
 
     def test_book_detail_book_not_found(self):
         """
         If book is not found, return 404
         """
-        self.client.login(username=self.test_username, password=self.test_password)
-
         response = self.client.get(reverse('book_detail', args=(0,)))
         self.assertEqual(response.status_code, 404)
 
@@ -354,10 +391,10 @@ class BookDetailViewTests(TestCase):
         """
         If someone else is renting the book, display due date and in use status
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
+        book = create_book_helper('Test Book', 3, User.objects.create())
+
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: In use")
@@ -368,25 +405,37 @@ class BookDetailViewTests(TestCase):
         """
         If the book is past due but there's an empty renting_user value, it's available
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time,)
+        book = create_book_helper('Test Book', 3)
+
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: <b>Available</b>")
         self.assertContains(response, "Days to borrow:")
         self.assertNotContains(response, "Total rental charge")
+    
+
+    def test_book_detail_past_due_empty_user_not_logged_in(self):
+        """
+        If the book is past due but there's an empty renting_user value, it's available
+        """
+        book = create_book_helper('Test Book', 3)
+
+        response = self.client.get(reverse('book_detail', args=(book.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Days to borrow:")
+        self.assertContains(response, 'Login</a> to rent this book!')
 
 
     def test_book_detail_my_rented_book(self):
         """
         If I'm renting the book, display due date, in use status, and total rental charge
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=self.user, days_rented=12)
+        book = create_book_helper('Test Book', 3, self.user, days_rented=12)
+
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: In use")
@@ -397,10 +446,10 @@ class BookDetailViewTests(TestCase):
         """
         If book was mine most recently but is past due date, show as available
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=-3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=self.user)
+        book = create_book_helper('Test Book', -3, self.user)
+
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: <b>Available</b>")
@@ -412,23 +461,36 @@ class BookDetailViewTests(TestCase):
         """
         If book is past due date, show as available
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=-3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
+        book = create_book_helper('Test Book', -3, User.objects.create())
+
         response = self.client.get(reverse('book_detail', args=(book.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: <b>Available</b>")
         self.assertContains(response, "Days to borrow:")
+    
+
+    def test_book_detail_shows_right_rental_rate(self):
+        """
+        Show the rental rate related to the book type
+        """
+        book_type = BookType.objects.create(book_type='Test type', rental_rate=5.50)
+        book = create_book_helper('Test Book', -3, User.objects.create(), book_type)
+
+        response = self.client.get(reverse('book_detail', args=(book.id,)))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, "Rental charge per day: $5.50")
 
 
 class RentTestCases(TestCase):
-    test_username = 'unit-test-user'
-    test_email = 'unit@test.com'
-    test_password = 'unittest'
+    username_test = 'unit-test-user'
+    email_test = 'unit@test.com'
+    password_test = 'unittest'
 
     def setUp(self):
-        self.user = User.objects.create_user(self.test_username, self.test_email, self.test_password)
+        self.user = User.objects.create_user(self.username_test, self.email_test, self.password_test)
 
     
     def test_rent_not_logged_in(self):
@@ -444,7 +506,7 @@ class RentTestCases(TestCase):
         """
         If book not found, return 404
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         response = self.client.post('/0/rent', {'days_rented': '10'})
         self.assertEqual(response.status_code, 404)
@@ -455,10 +517,10 @@ class RentTestCases(TestCase):
         If someone else is renting the book, return a 403 and a message
         This is not currently possible in the app flow, but want to test it in case
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
         time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=User.objects.create())
+        book = create_book_helper('Test Book', 3, User.objects.create())
         response = self.client.post(reverse('rent', args=[book.id]), data={'days_rented': '10'})
         self.assertEqual(response.status_code, 403)
     
@@ -468,10 +530,9 @@ class RentTestCases(TestCase):
         If I'm currently renting the book, return a 403 and a message
         This is not currently possible in the app flow, but want to test it in case
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', rental_due_date=time, renting_user=self.user)
+        book = create_book_helper('Test Book', 3, self.user)
         response = self.client.post(reverse('rent', args=[book.id]), {'days_rented': '10'})
         self.assertEqual(response.status_code, 403)
     
@@ -480,10 +541,10 @@ class RentTestCases(TestCase):
         """
         Rent a book that's available because it's past due
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=-3)
-        book = Book.objects.create(title='Test Book', days_rented=1, rental_due_date=time, renting_user=User.objects.create())
+        book = create_book_helper('Test Book', -3, User.objects.create(), days_rented=1)
+
         response = self.client.post(reverse('rent', args=[book.id]), {'days_rented': '10'})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('book_detail', args=[book.id]))
@@ -497,10 +558,9 @@ class RentTestCases(TestCase):
         """
         Rent a book that's available because its renting_user is null
         """
-        self.client.login(username=self.test_username, password=self.test_password)
+        self.client.force_login(self.user)
 
-        time = timezone.now() + datetime.timedelta(days=3)
-        book = Book.objects.create(title='Test Book', days_rented=1, rental_due_date=time)
+        book = create_book_helper('Test Book', -3, days_rented=1)
         response = self.client.post(reverse('rent', args=[book.id]), {'days_rented': '10'})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('book_detail', args=[book.id]))
