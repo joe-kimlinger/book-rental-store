@@ -384,7 +384,7 @@ class BookDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     
-    def test_book_detail_rented_book(self, book_type=BookType()):
+    def test_book_detail_rented_book(self):
         """
         If someone else is renting the book, display due date and in use status
         """
@@ -425,7 +425,7 @@ class BookDetailViewTests(TestCase):
         self.assertContains(response, 'Login</a> to rent this book!')
 
 
-    def test_book_detail_my_rented_book(self, book_type=BookType()):
+    def test_book_detail_my_rented_book(self):
         """
         If I'm renting the book, display due date, in use status, and total rental charge
         """
@@ -439,7 +439,7 @@ class BookDetailViewTests(TestCase):
         self.assertContains(response, "Total rental charge")
     
 
-    def test_book_detail_my_available_book(self, book_type=BookType()):
+    def test_book_detail_my_available_book(self):
         """
         If book was mine most recently but is past due date, show as available
         """
@@ -454,7 +454,7 @@ class BookDetailViewTests(TestCase):
         self.assertNotContains(response, "Total rental charge")
     
 
-    def test_book_detail_available_book(self, book_type=BookType()):
+    def test_book_detail_available_book(self):
         """
         If book is past due date, show as available
         """
@@ -466,6 +466,19 @@ class BookDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Status: <b>Available</b>")
         self.assertContains(response, "Days to borrow:")
+    
+
+    def test_book_detail_shows_right_rental_rate(self):
+        """
+        Show the rental rate related to the book type
+        """
+        book_type = BookType.objects.create(book_type='Test type', rental_rate=5.50)
+        book = create_book_helper('Test Book', -3, User.objects.create(), book_type)
+
+        response = self.client.get(reverse('book_detail', args=(book.id,)))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, "Rental charge per day: $5.50")
 
 
 class RentTestCases(TestCase):

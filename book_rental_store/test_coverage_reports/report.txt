@@ -29,9 +29,9 @@ books/migrations/0018_auto_20210624_1904.py                               4     
 books/migrations/0019_alter_booktype_book_type.py                         4      0   100%
 books/migrations/__init__.py                                              0      0   100%
 books/models.py                                                          26      0   100%
-books/tests.py                                                          265      0   100%
+books/tests.py                                                          271      0   100%
 books/urls.py                                                             3      0   100%
 books/views.py                                                           42      0   100%
 manage.py                                                                 5      0   100%
 -----------------------------------------------------------------------------------------
-TOTAL                                                                   475      8    98%
+TOTAL                                                                   481      8    98%
