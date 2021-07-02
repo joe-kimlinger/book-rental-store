@@ -1,3 +1,6 @@
+import datetime
+
+
 def test_book_list_empty_table(client):
     rv = client.get('/api/v1/resources/books')
     res = rv.get_json()
@@ -6,15 +9,25 @@ def test_book_list_empty_table(client):
 
 
 def test_book_list_books(client, test_db):
-    test_db.create_book()
-    test_db.create_book(title='Book 2', author='Author 2')
+    due_date = datetime.now + datetime.timedelta(days=3)
+    test_db.create_book(rental_due_date=due_date, renting_user_id=1)
+    test_db.create_book(title='Book 2', author='Author 2', book_type_id=2)
     rv = client.get('/api/v1/resources/books')
     res = rv.get_json()
     assert 'books' in res.keys()
     assert res['books'][0]['title'] == 'Test Title'
     assert res['books'][0]['author'] == 'Test Author'
+    assert res['books'][0]['status'] == 'Available'
+    assert res['books'][0]['type'] == 'Regular'
+    assert res['books'][0]['due_date'] == due_date
+    assert res['books'][0]['rental_minimum_charge'] == 2.00
+    assert res['books'][0]['rental_minimum_days'] == 2
+    assert res['books'][0]['regular_rental_charge'] == 1.50
     assert res['books'][1]['title'] == 'Book 2'
     assert res['books'][1]['author'] == 'Author 2'
+    assert res['books'][1]['author'] == 'Author 2'
+    assert res['books'][1]['status'] == 'Available'
+    assert res['books'][1]['type'] == 'Novel'
 
 
 def test_book_list_title_filter(client, test_db):

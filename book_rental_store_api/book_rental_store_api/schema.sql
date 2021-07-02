@@ -26,3 +26,15 @@ CREATE TABLE IF NOT EXISTS "books_book" (
 );
 CREATE INDEX "books_book_renting_user_id_89fc9a35" ON "books_book" ("renting_user_id");
 CREATE INDEX "books_book_book_type_id_ce8b1bf9" ON "books_book" ("book_type_id");
+
+CREATE TABLE IF NOT EXISTS "books_booktype" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "book_type" varchar(50) NOT NULL, 
+    "rental_rate" decimal NOT NULL, 
+    "min_days" integer unsigned NOT NULL CHECK ("min_days" >= 0), 
+    "min_days_rate" decimal NOT NULL
+);
+
+INSERT INTO "books_booktype" ("book_type",  "rental_rate", "min_days", "min_days_rate") VALUES ("Regular", 1.50, 2, 1.00);
+INSERT INTO "books_booktype" ("book_type",  "rental_rate", "min_days", "min_days_rate") VALUES ("Novel", 1.50, 3, 1.50);
+INSERT INTO "books_booktype" ("book_type",  "rental_rate", "min_days", "min_days_rate") VALUES ("Fiction", 3.00, 0, 1.00);

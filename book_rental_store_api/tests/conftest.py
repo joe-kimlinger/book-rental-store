@@ -17,7 +17,7 @@ class TestHelper():
         self.app = app
 
 
-    def create_book(self, title='Test Title', author='Test Author', rental_due_date='', days_rented=0, renting_user_id=0, book_type_id=0):
+    def create_book(self, title='Test Title', author='Test Author', rental_due_date='', days_rented=0, renting_user_id=0, book_type_id=1):
         with self.app.app_context():
             db = get_db()
             db.execute('INSERT INTO books_book (title, author, rental_due_date, days_rented, renting_user_id, book_type_id) VALUES (?,?,?,?,?,?)',

@@ -4,27 +4,31 @@ from flask import redirect
 from flask import url_for
 from flask import request
 from argon2 import PasswordHasher
+import base64
 
 
 
 def login():
-    """Log in a registered user by adding the user id to the session."""
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        db = get_db()
-        error = None
-        user = db.execute(
-            "SELECT * FROM auth_user WHERE username = ?", (username,)
-        ).fetchone()
+    auth_header = request.headers["Authorization"].replace("Basic", "").strip()
+    auth_header = base64.b64decode(auth_header)
+    auth_header = auth_header.decode('utf-8')
 
-        if user is None:
-            error = "Incorrect username."
+    username = auth_header.split(':')[0]
+    password = auth_header.split(':')[1]
+    db = get_db()
+    error = None
+    user = db.execute(
+        "SELECT * FROM auth_user WHERE username = ?", (username,)
+    ).fetchone()
+
+    if user is None:
+        error = {'error': f"Incorrect username.  To sign up, visit {request.url_root}/accounts/signup"}
+    else:
+        pwd =  user["password"].replace("argon2", "", 1)
+        ph = PasswordHasher()
+        if not ph.verify(pwd, password):
+            error = {'error': "Incorrect password."}
         else:
-            pwd =  user["password"].replace("argon2", "", 1)
-            ph = PasswordHasher()
-            print(pwd)
-            if not ph.verify(pwd, password):
-                error = "Incorrect password."
+            return user
 
     return error
