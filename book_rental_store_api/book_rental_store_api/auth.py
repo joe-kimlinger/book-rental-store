@@ -1,4 +1,4 @@
-from db import get_db
+from book_rental_store_api.db import get_db
 from flask import session
 from flask import redirect
 from flask import url_for
