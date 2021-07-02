@@ -9,7 +9,7 @@ from book_rental_store_api.auth import login
 bp = Blueprint("books", __name__)
 
 
-@bp.route("/api/v1/resources/books/all", methods=['GET'])
+@bp.route("/api/v1/resources/books", methods=['GET'])
 def index():
     book_list = query_db("select * from books_book")
     return {'books': book_list}
