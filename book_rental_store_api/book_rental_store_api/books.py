@@ -40,12 +40,12 @@ def index():
 
 @bp.route("/api/v1/resources/books/<int:book_id>", methods=['GET', 'PUT'])
 def show_book(book_id):
-    user = login()
     query = f"{BASE_QUERY} WHERE book.id=?"
     
+    user = login()
     if request.method == 'PUT' and 'error' in user:
         return jsonify(user['error']), 401
-
+    
     books = query_db(query, [book_id])
 
     if not len(books):
@@ -56,13 +56,23 @@ def show_book(book_id):
     if request.method == 'GET':
         return format_book(books[0], user.get('id'))
     else:
+        if 'days_to_rent' not in request.values:
+            return jsonify("Please provide days_to_rent in the request body."), 400
+        
+        try:
+            days_to_rent = int(request.values.get('days_to_rent'))
+        except ValueError:
+            return jsonify("Please provide a days_to_rent between 1 and 30 days"), 400
+            
+        if type(days_to_rent) != int or days_to_rent < 1 or days_to_rent >= 30:
+            return jsonify("Please provide a days_to_rent between 1 and 30 days"), 400
+
         if not is_available(book):
             if book['renting_user_id'] == user['id']:
                 return jsonify("You're already renting this book."), 403
             else:
                 return jsonify("Sorry, someone else is renting this right now."), 403
 
-        days_to_rent = int(request.values['days_to_rent'])
         due_date = datetime.datetime.now() + datetime.timedelta(days=days_to_rent)
         update_query = "UPDATE books_book SET rental_due_date=?, renting_user_id=?, days_rented=? WHERE id=?"
         query_db(update_query, [due_date, user['id'], days_to_rent, books[0]['id']])
@@ -72,8 +82,33 @@ def show_book(book_id):
 
 
 @bp.route("/api/v1/resources/books/mybooks", methods=['GET'])
-def my_books(book_id):
-    return f"This is book {book_id}"
+def my_books():
+    query = f"{BASE_QUERY} WHERE book.renting_user_id=?"
+    query_filter_text = []
+    query_fields = []
+    book_list = []
+
+    user = login()
+    if 'error' in user:
+        return jsonify(user['error']), 401
+
+    query_fields.append(user.get('id'))
+
+    if request.args.get('title'):
+        query_filter_text.append('title=?')
+        query_fields.append(request.args.get('title'))
+    if request.args.get('author'):
+        query_filter_text.append('author=?')
+        query_fields.append(request.args.get('author'))
+
+    if len(query_fields) > 1:
+        query += ' AND ' + ' AND '.join(query_filter_text)
+
+    book_list = [format_book(book, user.get('id')) 
+                 for book in query_db(query, query_fields)
+                 if not is_available(book)]
+
+    return {'my_books': book_list}
 
 
 def format_book(book, user_id=None):
@@ -107,9 +142,6 @@ def is_available(book):
 
 
 def rental_charge(book):
-    if book.get('days_rented') == None:
-        raise Exception('Error: days_rented is undefined')
-            
     rental_charge = book['min_days'] * book['min_days_rate'] + \
         book['rental_rate'] * max(0, book['days_rented'] - book['min_days'])
     return max(rental_charge, 0)

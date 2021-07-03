@@ -54,7 +54,6 @@ def app():
     # create the database and load test data
     with app.app_context():
         init_db()
-        #get_db().executescript(_data_sql)
 
     yield app
 
@@ -69,5 +68,5 @@ def client(app):
 
 
 @pytest.fixture
-def test_db(app):
+def test_helper(app):
     return TestHelper(app)

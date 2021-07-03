@@ -16,17 +16,19 @@ def login():
     username = auth_header.split(':')[0]
     password = auth_header.split(':')[1]
     db = get_db()
-    error = None
+
     user = db.execute(
         "SELECT * FROM auth_user WHERE username = ?", (username,)
     ).fetchone()
 
     if user is None:
-        return {'error': f"Incorrect username.  To sign up, visit {request.url_root}/accounts/signup"}
+        return {'error': f"Incorrect username.  To sign up, visit {request.url_root}accounts/signup"}
     else:
         pwd =  user["password"].replace("argon2", "", 1)
         ph = PasswordHasher()
-        if not ph.verify(pwd, password):
+        try:
+            ph.verify(pwd, password)
+        except:
             return {'error': "Incorrect password."}
-        else:
-            return user
+
+    return user
