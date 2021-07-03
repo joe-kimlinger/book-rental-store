@@ -122,7 +122,11 @@ returns
 ```
 **Example**:
 PUT /api/v1/resources/books/1
-
+```
+{
+    "days_to_rent": 10
+}
+```
 returns 
 ```
 {

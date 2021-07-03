@@ -12,7 +12,6 @@ def make_dicts(cursor, row):
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        print(current_app.config['DATABASE'])
         db = g._database = sqlite3.connect(current_app.config['DATABASE'])
     
     db.row_factory = make_dicts
@@ -25,7 +24,7 @@ def init_db():
 
     with current_app.open_resource("schema.sql") as f:
         db.executescript(f.read().decode("utf8"))
-        
+
 
 def query_db(query, args=()):
     cur = get_db().execute(query, args)
