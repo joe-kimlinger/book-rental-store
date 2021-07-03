@@ -1,0 +1,9 @@
+Name                                Stmts   Miss Branch BrPart  Cover
+---------------------------------------------------------------------
+book_rental_store_api/__init__.py      17      1      2      1    89%
+book_rental_store_api/auth.py          23      0      4      0   100%
+book_rental_store_api/books.py         99      0     36      0   100%
+book_rental_store_api/db.py            26      0      6      0   100%
+book_rental_store_api/util.py           0      0      0      0   100%
+---------------------------------------------------------------------
+TOTAL                                 165      1     48      1    99%
