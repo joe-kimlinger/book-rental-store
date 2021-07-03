@@ -36,3 +36,8 @@ jobs:
         cd book_rental_store
         echo "SECRET_KEY=secret" > .env
         python manage.py test books
+    - name: Test Flask
+      run: |
+        cd book_rental_store_api
+        echo "SECRET_KEY=secret" > .env
+        pytest
