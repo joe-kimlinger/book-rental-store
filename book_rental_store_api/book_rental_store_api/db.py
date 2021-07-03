@@ -33,6 +33,13 @@ def query_db(query, args=()):
     return rv
 
 
+def update_db(query, args=()):
+    conn = get_db()
+    conn.cursor().execute(query, args)
+    conn.commit()
+    conn.cursor().close()
+
+
 def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:

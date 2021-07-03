@@ -2,7 +2,7 @@ import datetime
 from flask import Blueprint
 from flask import request
 from flask import jsonify
-from book_rental_store_api.db import query_db
+from book_rental_store_api.db import query_db, update_db
 from book_rental_store_api.auth import login
 import re
 
@@ -75,7 +75,7 @@ def show_book(book_id):
 
         due_date = datetime.datetime.now() + datetime.timedelta(days=days_to_rent)
         update_query = "UPDATE books_book SET rental_due_date=?, renting_user_id=?, days_rented=? WHERE id=?"
-        query_db(update_query, [due_date, user['id'], days_to_rent, books[0]['id']])
+        update_db(update_query, [due_date, user['id'], days_to_rent, books[0]['id']])
 
         books = query_db(f"{BASE_QUERY} WHERE book.id=?", [book['id']])
         return format_book(books[0], user['id']), 201
@@ -132,8 +132,6 @@ def format_book(book, user_id=None):
         else:
             new_book['available_date'] = book['rental_due_date']
     
-    print(new_book)
-
     return new_book
 
 
