@@ -2,6 +2,7 @@ from book_rental_store_api.db import get_db
 from flask import request
 from argon2 import PasswordHasher
 import base64
+import re
 
 
 
@@ -22,7 +23,8 @@ def login():
     ).fetchone()
 
     if user is None:
-        return {'error': f"Incorrect username.  To sign up, visit {request.url_root}accounts/signup"}
+        req_url = re.sub(":\d*", "", request.url_root)
+        return {'error': f"Incorrect username.  To sign up, visit {req_url}accounts/signup"}
     else:
         pwd =  user["password"].replace("argon2", "", 1)
         ph = PasswordHasher()
