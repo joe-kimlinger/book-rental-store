@@ -23,7 +23,7 @@ def login():
     ).fetchone()
 
     if user is None:
-        req_url = re.sub(":\d*", "", request.url_root)
+        req_url = re.sub(":\d+", "", request.url_root)
         return {'error': f"Incorrect username.  To sign up, visit {req_url}accounts/signup"}
     else:
         pwd =  user["password"].replace("argon2", "", 1)
